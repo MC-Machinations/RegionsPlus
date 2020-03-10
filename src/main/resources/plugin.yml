@@ -1,0 +1,13 @@
+name: RegionsPlus
+version: ${project.version}
+main: me.machinemaker.regionsplus.RegionsPlus
+api-version: "1.13"
+prefix: Regions+
+authors: [Machine_Maker]
+depend: [Vault]
+description: Allows per-region effects/flags
+
+permissions:
+  regionsplus.tool:
+    default: op
+    description: Allows use of the selection tool
