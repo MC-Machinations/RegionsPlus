@@ -13,9 +13,8 @@
 
     <description>Allows per-region effects/flags</description>
     <properties>
-        <java.version>1.8</java.version>
+        <java.version>11</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.serverDir>C:\Users\Jake\Desktop\Bukkit\MC Servers\Paper\1.15.2</project.serverDir>
     </properties>
 
     <build>
@@ -24,7 +23,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.7.0</version>
+                <version>3.8.1</version>
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
@@ -36,7 +35,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>3.1.1</version>
+                <version>3.2.2</version>
                 <configuration>
                     <dependencyReducedPomLocation>${project.build.directory}/dependency-reduced-pom.xml</dependencyReducedPomLocation>
                     <relocations>
@@ -51,24 +50,6 @@
                         <phase>package</phase>
                         <goals>
                             <goal>shade</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <version>1.8</version>
-                <executions>
-                    <execution>
-                        <phase>install</phase>
-                        <configuration>
-                            <target>
-                                <copy file="${project.build.finalName}.jar" tofile="${project.serverDir}/plugins/${project.name}.jar"/>
-                            </target>
-                        </configuration>
-                        <goals>
-                            <goal>run</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -129,6 +110,11 @@
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
             <version>2.13.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-graphics</artifactId>
+            <version>15-ea+1</version>
         </dependency>
     </dependencies>
 </project>

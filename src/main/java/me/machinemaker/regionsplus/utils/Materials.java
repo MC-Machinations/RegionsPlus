@@ -10,6 +10,7 @@ import org.bukkit.event.block.Action;
 import java.util.*;
 import java.util.stream.Stream;
 
+@SuppressWarnings("deprecated")
 public class Materials {
 
     private static final int ACTION_ON_LEFT     = 0b0001;
@@ -724,6 +725,7 @@ public class Materials {
         });
 
         Arrays.stream(Material.values()).forEach(m -> {
+            //noinspection deprecation
             if (m.isLegacy()) return;
             if (isSpawnEgg(m)) MATERIALS.put(m, EXECUTES_ACTION);
             if (SHULKER_BOXES.contains(m)) MATERIALS.put(m, ACTION_ON_RIGHT);
@@ -784,6 +786,6 @@ public class Materials {
     }
 
     public static void load() {
-        //
+        // method to set up Materials util
     }
 }
