@@ -1,11 +1,11 @@
 package me.machinemaker.regionsplus.regions;
 
+import lombok.Getter;
 import me.machinemaker.regionsplus.RegionsPlus;
-import me.machinemaker.regionsplus.flags.Flags;
-import me.machinemaker.regionsplus.flags.RegionFlag;
-import me.machinemaker.regionsplus.flags.StateFlag;
+import me.machinemaker.regionsplus.flags.*;
 import me.machinemaker.regionsplus.flags.StateFlag.State;
-import me.machinemaker.regionsplus.flags.StringFlag;
+import me.machinemaker.regionsplus.misc.Lang;
+import me.machinemaker.regionsplus.utils.Util;
 import me.machinemaker.regionsplus.worlds.RegionWorld;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
@@ -37,13 +37,13 @@ public abstract class BaseRegion {
     private HashMap<String, RegionFlag<StringFlag, String>> stringFlags;
 
 
-    protected String name;
-    protected String nameKey;
+    @Getter protected String name;
+    @Getter protected String nameKey;
     protected RegionType type;
     protected File file;
     protected RegionWorld world;
-    protected List<UUID> admins;
-    protected List<UUID> users;
+    @Getter protected List<UUID> admins;
+    @Getter protected List<UUID> users;
 
     private BaseComponent[] title;
     private BaseComponent[] bottom;
@@ -80,20 +80,20 @@ public abstract class BaseRegion {
 
         Map<String, State> stateMap = new HashMap<>();
         Map<String, String> stringMap = new HashMap<>();
-        Arrays.stream(StateFlag.values()).forEach(f -> stateMap.put(f.toString(), State.valueOf(f.getDefaultValue().toString().toUpperCase())));
-        Arrays.stream(StringFlag.values()).forEach(f -> stringMap.put(f.toString(), f.getDefaultValue()));
+        Arrays.stream(StateFlag.values()).forEach(f -> stateMap.put(f.toString(), State.valueOf(f.getDefaultState().toString().toUpperCase())));
+        Arrays.stream(StringFlag.values()).forEach(f -> stringMap.put(f.toString(), f.getDefault()));
         initFlags(stateFlags, StateFlag.class, "flags.state.", stateMap, key -> State.valueOf(config.getString(key).toUpperCase()));
         initFlags(stringFlags, StringFlag.class, "flags.string.", stringMap, key -> config.getString(key));
         taskName = world.getName() + "_" + name;
         RegionsPlus.newSharedChain(taskName).async(this::saveChanges).execute();
     }
 
-    private <T extends Enum, J> void initFlags(HashMap<String, RegionFlag<T, J>> flags, Class<T> keyClass, String path, Map<String, J> keyValues, Function<String, J> configGet) {
+    private <T extends Enum<T> & IFlag<J>, J> void initFlags(HashMap<String, RegionFlag<T, J>> flags, Class<T> keyClass, String path, Map<String, J> keyValues, Function<String, J> configGet) {
         keyValues.forEach((key, value) -> {
             if (config.isSet(path + key))
-                flags.put(key.toUpperCase(), new RegionFlag<>((T) Enum.valueOf(keyClass, key.toUpperCase()), configGet.apply(path + key)));
+                flags.put(key.toUpperCase(), new RegionFlag<>(Enum.valueOf(keyClass, key.toUpperCase()), configGet.apply(path + key)));
             else {
-                T newFlag = (T) Enum.valueOf(keyClass, key.toUpperCase());
+                T newFlag = Enum.valueOf(keyClass, key.toUpperCase());
                 config.set(path + key, value);
                 flags.put(key.toUpperCase(), new RegionFlag<>(newFlag, value));
             }
@@ -103,18 +103,6 @@ public abstract class BaseRegion {
     public abstract boolean inRegion(Location loc);
 
     public abstract long getVolume();
-
-    public String getName() {
-        return name;
-    }
-
-    public String getNameKey() {
-        return nameKey;
-    }
-
-    public List<UUID> getAdmins() {
-        return admins;
-    }
 
     public void addAdmins(Collection<UUID> playerUUIDs) {
         admins.addAll(playerUUIDs);
@@ -128,10 +116,6 @@ public abstract class BaseRegion {
     public void removeAdmins(Collection<UUID> playerUUIDs) {
         admins.removeAll(playerUUIDs);
         saveChanges();
-    }
-
-    public List<UUID> getUsers() {
-        return users;
     }
 
     public void addUsers(Collection<UUID> playerUUIDs) {
@@ -197,7 +181,7 @@ public abstract class BaseRegion {
                     RegionFlag<StringFlag, String> flag = Optional.ofNullable(stringFlags.getOrDefault(f.u(), null)).orElseThrow(IllegalStateException::new);
                     builder.append("[✎]").color(flag.getValue().isEmpty() ? RED : GREEN).bold(true)
                             .event(new ClickEvent(Action.SUGGEST_COMMAND, "/rg flag set " + this.nameKey + " " + flag.getType().toUpper() + " "))
-                            .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Click to edit\n").color(GREEN).append("Current value: ").color(GRAY).append(flag.getValue().isEmpty() ? "(none)" : flag.getValue()).color(flag.getValue().isEmpty() ? RED : WHITE).italic(flag.getValue().isEmpty()).create()))
+                            .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Click to edit\n").color(GREEN).append("Current value: ").color(GRAY).append(flag.getValue().isEmpty() ? "(none)" : Util.parseColor(flag.getValue())).color(flag.getValue().isEmpty() ? RED : WHITE).italic(flag.getValue().isEmpty()).create()))
                             .append(" " + flag.getType().toUpper()).color(AQUA).bold(false).event((ClickEvent) null).event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder(flag.getType().getDescription()).color(GRAY).create()));
                     break;
                 }

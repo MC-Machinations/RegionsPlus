@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile default="true" name="Default" enabled="true" />
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="RegionsPlus" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="acf-bukkit" target="1.8" />
+      <module name="acf-core" target="1.8" />
+      <module name="acf-paper" target="1.8" />
+      <module name="RegionsPlus" target="1.8" />
+    </bytecodeTargetLevel>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="RegionsPlus" options="-parameters" />
+      <module name="acf-bukkit" options="-parameters" />
+      <module name="acf-core" options="-parameters" />
+      <module name="acf-paper" options="-parameters" />
+    </option>
+  </component>
+</project>

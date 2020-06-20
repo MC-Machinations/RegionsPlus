@@ -9,10 +9,10 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.inventory.EquipmentSlot;
 
-public class InteractEntity extends RegionEvent<StateFlag> {
+public class PlayerInteractEntity extends RegionEvent<StateFlag> {
 
-    public InteractEntity() {
-        super("PlayerInteractEntityEvent", StateFlag.RIDE, StateFlag.INTERACT, StateFlag.USE);
+    public PlayerInteractEntity() {
+        super("PlayerInteractEntityEvent", new StateFlag[]{StateFlag.RIDE, StateFlag.INTERACT, StateFlag.USE});
     }
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
@@ -22,7 +22,7 @@ public class InteractEntity extends RegionEvent<StateFlag> {
                 true,
                 event.getRightClicked().getLocation(),
                 event.getPlayer(),
-                (r, f) -> {
+                (r, f, regions) -> {
                     State value = r.getStateFlag(f).getValue();
                     switch (f) {
                         case RIDE:

@@ -7,11 +7,11 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.block.BlockBreakEvent;
 
-public class Break extends RegionEvent<StateFlag> {
+public class BlockBreak extends RegionEvent<StateFlag> {
 
 
-    public Break() {
-        super("BlockBreakEvent", StateFlag.BLOCK_BREAK, StateFlag.BUILD);
+    public BlockBreak() {
+        super("BlockBreakEvent", new StateFlag[]{StateFlag.BLOCK_BREAK, StateFlag.BUILD});
     }
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
@@ -20,7 +20,7 @@ public class Break extends RegionEvent<StateFlag> {
             true,
             event.getBlock().getLocation(),
             event.getPlayer(),
-            (r, f) -> r.getStateFlag(f).getValue() == State.DENY,
+            (r, f, regions) -> r.getStateFlag(f).getValue() == State.DENY,
             event::setCancelled
         );
     }

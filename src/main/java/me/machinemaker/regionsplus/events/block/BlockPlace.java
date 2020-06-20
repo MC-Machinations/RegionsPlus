@@ -7,10 +7,10 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.block.BlockPlaceEvent;
 
-public class Place extends RegionEvent<StateFlag> {
+public class BlockPlace extends RegionEvent<StateFlag> {
 
-    public Place() {
-        super("BlockPlaceEvent", StateFlag.BLOCK_PLACE, StateFlag.BUILD);
+    public BlockPlace() {
+        super("BlockPlaceEvent", new StateFlag[]{StateFlag.BLOCK_PLACE, StateFlag.BUILD});
     }
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
@@ -19,7 +19,7 @@ public class Place extends RegionEvent<StateFlag> {
                 event.canBuild(),
                 event.getBlock().getLocation(),
                 event.getPlayer(),
-                (r, f) -> r.getStateFlag(f).getValue() == State.DENY,
+                (r, f, regions) -> r.getStateFlag(f).getValue() == State.DENY,
                 deny -> event.setBuild(!deny),
                 event.canBuild()
         );

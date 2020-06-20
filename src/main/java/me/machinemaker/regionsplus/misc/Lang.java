@@ -1,6 +1,7 @@
 package me.machinemaker.regionsplus.misc;
 
 import me.machinemaker.regionsplus.RegionsPlus;
+import me.machinemaker.regionsplus.utils.Util;
 import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -40,7 +41,8 @@ public enum Lang {
     LIST_PLAYERS(REGION_PREFIX.msg + "&9{type}&7: &6{players}&7."),
     CLEARED_PLAYERS(REGION_PREFIX.msg + "&7All &9{type} &7players have been &acleared&7."),
 
-    ILLEGAL_ACTION("&c&lHey! &7You cannot do that here."),
+    ILLEGAL_PREFIX("&c&lHey! "),
+    ILLEGAL_ACTION("&7You cannot do that here."),
 
     TELEPORTED("&bTeleported..."),
     TOOL_RECEIVED("&7You have been given the &b&lselection tool&7!");
@@ -71,11 +73,15 @@ public enum Lang {
     }
 
     public String p() {
-        return ChatColor.translateAlternateColorCodes('&', PREFIX.toString() + this.msg);
+        return Util.parseColor(PREFIX.toString() + this.msg);
+    }
+
+    public String il() {
+        return Util.parseColor(ILLEGAL_PREFIX.toString() + this.msg);
     }
 
     public String err() {
-        return ChatColor.translateAlternateColorCodes('&', ERROR_PREFIX.toString().replace("{message}", this.msg));
+        return Util.parseColor(ERROR_PREFIX.toString().replace("{message}", this.msg));
     }
 
     private static FileConfiguration config;
@@ -112,6 +118,6 @@ public enum Lang {
 
     @Override
     public String toString() {
-        return ChatColor.translateAlternateColorCodes('&', this.msg);
+        return Util.parseColor(this.msg);
     }
 }

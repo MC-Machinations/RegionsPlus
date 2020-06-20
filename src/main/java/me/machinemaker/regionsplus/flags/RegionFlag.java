@@ -1,6 +1,6 @@
 package me.machinemaker.regionsplus.flags;
 
-public class RegionFlag<T, J> {
+public class RegionFlag<T extends IFlag<J>, J> {
     protected T type;
     private J state;
 
@@ -19,6 +19,10 @@ public class RegionFlag<T, J> {
 
     public void setValue(J state) {
         this.state = state;
+    }
+
+    public boolean isSet() {
+        return !this.type.getDefault().toString().equals(this.state.toString());
     }
 
 }

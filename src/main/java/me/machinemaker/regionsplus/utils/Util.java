@@ -1,4 +1,4 @@
-package me.machinemaker.regionsplus.misc;
+package me.machinemaker.regionsplus.utils;
 
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.*;
@@ -23,5 +23,9 @@ public class Util {
 
     public static void clearChat(CommandSender cs) {
         cs.sendMessage(StringUtils.repeat(" \n", 256));
+    }
+
+    public static String parseColor(String input) {
+        return ChatColor.translateAlternateColorCodes('&', input);
     }
 }

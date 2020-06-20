@@ -13,9 +13,39 @@
 
     <description>Allows per-region effects/flags</description>
     <properties>
-        <java.version>11</java.version>
+        <java.version>1.8</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <script.jar>'${project.build.directory}/${project.build.finalName}.jar'</script.jar>
     </properties>
+
+    <profiles>
+        <profile>
+            <id>Windows</id>
+            <activation>
+                <os>
+                    <family>Windows</family>
+                </os>
+            </activation>
+            <properties>
+                <script.executor>PowerShell.exe</script.executor>
+                <script.outputFile>'C:\Users\Jake\Desktop\Minecraft Servers\Paper\1.15.2\plugins\${project.name}.jar'</script.outputFile>
+                <script.args>Copy-Item -Path "${script.jar}" -Destination "${script.outputFile}"</script.args>
+            </properties>
+        </profile>
+        <profile>
+            <id>Unix</id>
+            <activation>
+                <os>
+                    <family>unix</family>
+                </os>
+            </activation>
+            <properties>
+                <script.executor>cp</script.executor>
+                <script.outputFile>'/Users/jakepotrebic/Desktop/Minecraft Servers/Paper/1.15.2/plugins/${project.name}.jar'</script.outputFile>
+                <script.args>"${script.jar}" "${script.outputFile}"</script.args>
+            </properties>
+        </profile>
+    </profiles>
 
     <build>
         <defaultGoal>clean package</defaultGoal>
@@ -41,7 +71,11 @@
                     <relocations>
                         <relocation>
                             <pattern>co.aikar.commands</pattern>
-                            <shadedPattern>me.machinemaker.acf</shadedPattern>
+                            <shadedPattern>me.machinemaker.regionsplus.acf</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>me.machinemaker.configmanager</pattern>
+                            <shadedPattern>me.machinemaker.regionsplus.configmanager</shadedPattern>
                         </relocation>
                     </relocations>
                 </configuration>
@@ -51,8 +85,37 @@
                         <goals>
                             <goal>shade</goal>
                         </goals>
+                        <configuration>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.6.0</version>
+                <executions>
+                    <execution>
+                        <id>install-jar</id>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <executable>${script.executor}</executable>
+                    <commandlineArgs>${script.args}</commandlineArgs>
+                </configuration>
             </plugin>
         </plugins>
         <resources>
@@ -76,10 +139,6 @@
             <id>aikar</id>
             <url>https://repo.aikar.co/content/groups/aikar/</url>
         </repository>
-        <repository>
-            <id>vault-repo</id>
-            <url>http://nexus.hc.to/content/repositories/pub_releases</url>
-        </repository>
     </repositories>
 
     <dependencies>
@@ -95,26 +154,42 @@
             <version>0.5.0-SNAPSHOT</version>
         </dependency>
         <dependency>
-            <groupId>net.milkbowl.vault</groupId>
-            <artifactId>VaultAPI</artifactId>
-            <version>1.7</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>co.aikar</groupId>
             <artifactId>taskchain-bukkit</artifactId>
             <version>3.7.2</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
             <version>2.13.0</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-graphics</artifactId>
             <version>15-ea+1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.12</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.inject</groupId>
+            <artifactId>guice</artifactId>
+            <version>4.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>17.0.0</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>me.machinemaker</groupId>
+            <artifactId>config-manager</artifactId>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
 </project>

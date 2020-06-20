@@ -2,9 +2,10 @@ package me.machinemaker.regionsplus.commands;
 
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.*;
+import com.google.inject.Inject;
+import me.machinemaker.regionsplus.utils.SelectionManager;
 import me.machinemaker.regionsplus.misc.Lang;
-import me.machinemaker.regionsplus.SelectionManager;
-import me.machinemaker.regionsplus.misc.Util;
+import me.machinemaker.regionsplus.utils.Util;
 import me.machinemaker.regionsplus.regions.Selection;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.ComponentBuilder;
@@ -15,11 +16,14 @@ import org.bukkit.entity.Player;
 @CommandAlias("selection|sel")
 public class SelectionCmd extends BaseCommand {
 
+    @Inject
+    private SelectionManager selectionManager;
+
     @CommandPermission("regionsplus.info")
     @Subcommand("info")
     @Default
     public void info(Player p) { //TODO: More info
-        Selection selection = SelectionManager.get().getSelection(p);
+        Selection selection = selectionManager.getSelection(p);
         p.sendMessage(ChatColor.GRAY + "======== " + ChatColor.AQUA + "Selection Info " + ChatColor.GRAY + "========");
         ComponentBuilder world = new ComponentBuilder("• ").color(ChatColor.BLUE).append("World: ").color(ChatColor.GRAY);
         if (selection.getWorld() == null) p.sendMessage(world.append("not set").color(ChatColor.RED).italic(true).create());

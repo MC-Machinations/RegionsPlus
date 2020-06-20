@@ -1,5 +1,6 @@
-package me.machinemaker.regionsplus;
+package me.machinemaker.regionsplus.utils;
 
+import com.google.inject.Singleton;
 import me.machinemaker.regionsplus.regions.Selection;
 import org.bukkit.entity.Player;
 
@@ -7,16 +8,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+@Singleton
 public class SelectionManager {
 
-    private static SelectionManager instance = new SelectionManager();
-    private SelectionManager() { }
-    public static SelectionManager get() {
-        return instance;
-    }
-
     private Map<UUID, Selection> selectionMap;
-    public void init() {
+
+    public SelectionManager() {
         selectionMap = new HashMap<>();
     }
 

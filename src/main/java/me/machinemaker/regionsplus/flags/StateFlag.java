@@ -1,17 +1,27 @@
 package me.machinemaker.regionsplus.flags;
 
-public enum StateFlag { //Protection
+import lombok.Getter;
+
+import java.util.Arrays;
+import java.util.List;
+
+@Getter
+public enum StateFlag implements IFlag<StateFlag.State> { //Protection
     // Blocks
-    BUILD(State.ALLOW, "Everything building related"),
     BLOCK_PLACE(State.ALLOW, "Block placing"),
     BLOCK_BREAK(State.ALLOW, "Block breaking"),
     VEHICLE_PLACE(State.ALLOW, "Place minecarts, etc."),
     VEHICLE_DESTROY(State.ALLOW, "Destroy minecarts, etc."),
 
+    BUILD(State.ALLOW, "Everything building related",
+            StateFlag.BLOCK_PLACE,
+            StateFlag.BLOCK_BREAK,
+            StateFlag.VEHICLE_PLACE,
+            StateFlag.VEHICLE_DESTROY
+    ),
+
     // Interactions
-    INTERACT(State.ALLOW, "Interactions with blocks & entities"),
     RIDE(State.ALLOW, "Ride minecarts, animals"),
-    USE(State.ALLOW, "Using blocks (e.g. Doors, levers, NOT inventories)"),
     USE_INVENTORIES(State.ALLOW, "Use inventories"),
     SLEEP(State.ALLOW, "Use beds to sleep"),
     LIGHTER(State.ALLOW, "Place fire (flint & steel, fire charge, etc.)"),
@@ -20,13 +30,38 @@ public enum StateFlag { //Protection
     TNT(State.ALLOW, "Light TNT"),
     TRAMPLING(State.ALLOW, "Trampling of turtle eggs and farmland"),
 
+    USE(State.ALLOW, "Using blocks (e.g. Doors, levers, NOT inventories)",
+            StateFlag.SLEEP,
+            StateFlag.LIGHTER,
+            StateFlag.SPAWN_EGG,
+            StateFlag.TNT,
+            StateFlag.TRAMPLING
+    ),
+    INTERACT(State.ALLOW, "Interactions with blocks & entities",
+            StateFlag.RIDE,
+            StateFlag.USE,
+            StateFlag.USE_INVENTORIES,
+            StateFlag.SLEEP,
+            StateFlag.TNT,
+            StateFlag.TRAMPLING
+    ),
+
+
+
     // Damage
-    DAMAGE(State.ALLOW, "Anything taking damage from anything"),
-    DAMAGE_PLAYERS(State.ALLOW, "Player damage from anything"),
-    DAMAGE_ENTITIES(State.ALLOW, "Mob entities (not players) damage from anything"),
     DAMAGE_ANIMALS(State.ALLOW, "Damage to animals"),
     DAMAGE_MONSTERS(State.ALLOW, "Damage to monsters"),
     PVP(State.ALLOW, "Player vs. Player damage"),
+
+    DAMAGE_PLAYERS(State.ALLOW, "Player damage from anything"),
+    DAMAGE_ENTITIES(State.ALLOW, "Mob entities (not players) damage from anything",
+            StateFlag.DAMAGE_ANIMALS,
+            StateFlag.DAMAGE_MONSTERS
+    ),
+    DAMAGE(State.ALLOW, "Anything taking damage from anything",
+            StateFlag.DAMAGE_PLAYERS,
+            StateFlag.DAMAGE_ENTITIES
+    ),
 
     // Movement
     ENTRY(State.ALLOW, "Entry into region"),
@@ -52,20 +87,19 @@ public enum StateFlag { //Protection
     DESTROY_PAINTINGS(State.ALLOW, "Paintings destroyed by non-players"),
     DESTROY_ITEMFRAMES(State.ALLOW, "Itemframes destroyed by non-players");
 
-    State defaultState;
-    String description;
 
-    StateFlag(State defaultState, String desc) {
+    private final State defaultState;
+    final String description;
+    List<StateFlag> children;
+
+    StateFlag(State defaultState, String desc, StateFlag... children) {
         this.defaultState = defaultState;
         this.description = desc;
+        this.children = Arrays.asList(children);
     }
 
-    public State getDefaultValue() {
-        return defaultState;
-    }
-
-    public String getDescription() {
-        return description;
+    public State getDefault() {
+        return this.defaultState;
     }
 
     public String toString() {

@@ -1,6 +1,7 @@
 package me.machinemaker.regionsplus.worlds;
 
 import me.machinemaker.regionsplus.regions.*;
+import org.apache.commons.lang.Validate;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -26,7 +27,7 @@ public class RegionWorld {
         for (File file : Objects.requireNonNull(worldFolder.listFiles((dir, name) -> name.endsWith(".yml") && !name.equals("__global__.yml")))) {
             FileConfiguration config = YamlConfiguration.loadConfiguration(file);
             Region region;
-            if (config.getString("type").equalsIgnoreCase("cube")) //TODO: NPE check
+            if (Objects.requireNonNull(config.getString("type"), file.getName() + " does not have a type entry").equalsIgnoreCase("cube"))
                 region = new CubeRegion(this, file.getName().substring(0, file.getName().lastIndexOf(".yml")));
             else continue;
             regions.add(region);

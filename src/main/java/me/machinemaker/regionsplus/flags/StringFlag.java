@@ -1,6 +1,8 @@
 package me.machinemaker.regionsplus.flags;
 
-public enum StringFlag {
+import lombok.Getter;
+
+public enum StringFlag implements IFlag<String> {
     ENTER_CHAT("", "Message to show when entering a region"),
     ENTER_TITLE("", "Title/subtitle to show when entering a region"),
     LEAVE_CHAT("", "Message to show when leaving a region"),
@@ -8,20 +10,17 @@ public enum StringFlag {
     ENTER_DENY_CHAT("", "Message to show when entry is denied"),
     EXIT_DENY_CHAT("", "Message to show when leaving is denied");
 
-    String defaultString;
-    String description;
+    final String defaultValue;
+    @Getter
+    final String description;
 
     StringFlag(String defaultString, String desc) {
-        this.defaultString = defaultString;
+        this.defaultValue = defaultString;
         this.description = desc;
     }
 
-    public String getDefaultValue() {
-        return defaultString;
-    }
-
-    public String getDescription() {
-        return description;
+    public String getDefault() {
+        return this.defaultValue;
     }
 
     public String toString() {

@@ -4,16 +4,18 @@ import co.aikar.commands.BaseCommand;
 import co.aikar.commands.CommandHelp;
 import co.aikar.commands.annotation.*;
 import com.google.common.base.Enums;
-import me.machinemaker.regionsplus.RegionManager;
+import com.google.inject.Inject;
+import me.machinemaker.regionsplus.RegionsPlus.MainConfig;
 import me.machinemaker.regionsplus.flags.Flags;
 import me.machinemaker.regionsplus.flags.StateFlag;
 import me.machinemaker.regionsplus.flags.StateFlag.State;
 import me.machinemaker.regionsplus.flags.StringFlag;
 import me.machinemaker.regionsplus.misc.Lang;
 import me.machinemaker.regionsplus.misc.Sender;
-import me.machinemaker.regionsplus.misc.Util;
 import me.machinemaker.regionsplus.regions.BaseRegion;
 import me.machinemaker.regionsplus.regions.Region;
+import me.machinemaker.regionsplus.utils.RegionManager;
+import me.machinemaker.regionsplus.utils.Util;
 import me.machinemaker.regionsplus.worlds.RegionWorld;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -31,6 +33,22 @@ import static org.bukkit.ChatColor.*;
 @CommandAlias("rg|region")
 public class RegionCmd extends BaseCommand {
 
+    @Inject
+    private RegionManager regionManager;
+
+    @Inject
+    private MainConfig config;
+
+//    @CommandAlias("test")
+//    public void test(CommandSender cs, @Optional String value) {
+//        if (isNull(value)) {
+//            cs.sendMessage(config.useActionBar);
+//        } else {
+//            config.useActionBar = value;
+//            config.save();
+//        }
+//    }
+
     @Subcommand("info")
     @CommandPermission("regionsplus.region.info")
     @Description("Shows info about a specific region or the region(s) you are in")
@@ -41,7 +59,7 @@ public class RegionCmd extends BaseCommand {
         else if (!isNull(region))
             region.getRegionInfo().forEach(cs::sendMessage);
         else {
-            RegionWorld rgWorld = RegionManager.get().getWorld(((Player) cs).getWorld().getName());
+            RegionWorld rgWorld = regionManager.getWorld(((Player) cs).getWorld().getName());
             BaseRegion rgSelect = rgWorld.getRegions().stream().filter(rg -> rg.inRegion(((Player) cs).getLocation())).min(Comparator.comparingLong(Region::getVolume)).map(rg -> (BaseRegion) rg).orElse(rgWorld.getGlobal());
             rgSelect.getRegionInfo().forEach(cs::sendMessage);
         }
@@ -97,6 +115,7 @@ public class RegionCmd extends BaseCommand {
         }
 
         @Subcommand("list")
+        @CommandAlias("flags")
         @CommandPermission("regionsplus.region.flag.list")
         @Description("Lists flags for a region")
         @CommandCompletion("@regionNames:global=true")
@@ -152,7 +171,7 @@ public class RegionCmd extends BaseCommand {
         @CommandPermission("regionsplus.region.admin.list")
         @Description("Lists the admin players")
         @CommandCompletion("@regionNames:global=true")
-        public void listAdmins(CommandSender cs, BaseRegion region) {
+        public void listAdmins(CommandSender cs, @Default("$&CURRENT&$") BaseRegion region) {
             String playerList = region.getAdmins().size() == 0 ? RED.toString() + ITALIC + "(none)" : region.getAdmins().stream().map(uuid -> Bukkit.getOfflinePlayer(uuid).getName()).collect(Collectors.joining(GRAY + ", " + GOLD));
             cs.sendMessage(Lang.LIST_PLAYERS.p().replace("{region}", region.getName()).replace("{type}", "Admins").replace("{players}", playerList));
         }
@@ -216,7 +235,7 @@ public class RegionCmd extends BaseCommand {
         @CommandPermission("regionsplus.region.user.list")
         @Description("Lists the user players")
         @CommandCompletion("@regionNames:global=true")
-        public void listUsers(CommandSender cs, BaseRegion region) {
+        public void listUsers(CommandSender cs, @Default("$&CURRENT&$") BaseRegion region) {
             String playerList = region.getUsers().size() == 0 ? RED.toString() + ITALIC + "(none)" : region.getUsers().stream().map(uuid -> Bukkit.getOfflinePlayer(uuid).getName()).collect(Collectors.joining(GRAY + ", " + GOLD));
             cs.sendMessage(Lang.LIST_PLAYERS.p().replace("{region}", region.getName()).replace("{type}", "Users").replace("{players}", playerList));
         }

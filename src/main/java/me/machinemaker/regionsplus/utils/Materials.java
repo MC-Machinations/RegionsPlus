@@ -730,7 +730,7 @@ public class Materials {
             if (isSpawnEgg(m)) MATERIALS.put(m, EXECUTES_ACTION);
             if (SHULKER_BOXES.contains(m)) MATERIALS.put(m, ACTION_ON_RIGHT);
             if (!MATERIALS.containsKey(m)) {
-                System.out.println("MISSING: " + m.name());
+                System.err.println("MISSING: " + m.name());
             }
         });
     }

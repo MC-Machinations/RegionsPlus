@@ -4,17 +4,29 @@ import co.aikar.commands.*;
 import co.aikar.taskchain.BukkitTaskChainFactory;
 import co.aikar.taskchain.TaskChain;
 import co.aikar.taskchain.TaskChainFactory;
+import com.google.inject.Injector;
+import com.google.inject.Singleton;
+import me.machinemaker.configmanager.BaseConfig;
+import me.machinemaker.configmanager.annotations.Description;
+import me.machinemaker.configmanager.annotations.NewConfig;
+import me.machinemaker.configmanager.annotations.Param;
+import me.machinemaker.configmanager.annotations.Path;
+import me.machinemaker.configmanager.configs.ConfigFormat;
 import me.machinemaker.regionsplus.commands.RegionCmd;
 import me.machinemaker.regionsplus.commands.RegionPlusCmd;
 import me.machinemaker.regionsplus.commands.SelectionCmd;
 import me.machinemaker.regionsplus.commands.Tool;
-import me.machinemaker.regionsplus.events.block.Break;
-import me.machinemaker.regionsplus.events.block.Place;
-import me.machinemaker.regionsplus.events.player.Interact;
-import me.machinemaker.regionsplus.events.player.InteractEntity;
+import me.machinemaker.regionsplus.events.block.BlockBreak;
+import me.machinemaker.regionsplus.events.block.BlockPlace;
+import me.machinemaker.regionsplus.events.entity.EntityDamage;
+import me.machinemaker.regionsplus.events.entity.EntityDamageByEntity;
+import me.machinemaker.regionsplus.events.player.PlayerInteract;
+import me.machinemaker.regionsplus.events.player.PlayerInteractEntity;
+import me.machinemaker.regionsplus.events.player.PlayerMove;
 import me.machinemaker.regionsplus.flags.Flags;
 import me.machinemaker.regionsplus.flags.StateFlag;
 import me.machinemaker.regionsplus.flags.StateFlag.State;
+import me.machinemaker.regionsplus.misc.Binder;
 import me.machinemaker.regionsplus.misc.Lang;
 import me.machinemaker.regionsplus.misc.Log4JFilter;
 import me.machinemaker.regionsplus.misc.Sender;
@@ -22,17 +34,18 @@ import me.machinemaker.regionsplus.regions.BaseRegion;
 import me.machinemaker.regionsplus.regions.Region;
 import me.machinemaker.regionsplus.regions.RegionType;
 import me.machinemaker.regionsplus.regions.Selection;
-import me.machinemaker.regionsplus.tool.PlayerInteract;
 import me.machinemaker.regionsplus.utils.Materials;
+import me.machinemaker.regionsplus.utils.Metrics;
+import me.machinemaker.regionsplus.utils.RegionManager;
+import me.machinemaker.regionsplus.utils.SelectionManager;
 import me.machinemaker.regionsplus.worlds.RegionWorld;
-import net.milkbowl.vault.permission.Permission;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.InvalidConfigurationException;
+import org.bukkit.event.Listener;
 import org.bukkit.plugin.PluginManager;
-import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.StringUtil;
 
@@ -42,7 +55,10 @@ import java.util.stream.Collectors;
 
 import static java.util.Objects.isNull;
 
+@Singleton
 public final class RegionsPlus extends JavaPlugin {
+
+    private final int PLUGIN_ID = 7517;
 
     private static TaskChainFactory taskChainFactory;
     public static <T> TaskChain<T> newChain() {
@@ -55,23 +71,58 @@ public final class RegionsPlus extends JavaPlugin {
 
     private PaperCommandManager cm;
 
-    private Permission permManager;
+    private SelectionManager selectionManager;
+    private RegionManager regionManager;
+
+    private List<? extends BaseCommand> commandClasses;
+    private List<Listener> events;
+    private Injector injector;
 
     //TODO Make custom util function for replacing lots of placeholders e.g. {name}, {region}
     //TODO Custom logging to console + log file
 
     @Override
     public void onEnable() {
-        Materials.load();
+        new Metrics(this, PLUGIN_ID);
+
+        MainConfig config = new MainConfig();
+        config.init(this);
+
         taskChainFactory = BukkitTaskChainFactory.create(this);
         logger = this.getLogger();
 
-        Lang.init(this);
-        SelectionManager.get().init();
-        RegionManager.get().init(this);
+        // Dep. Injection
+        commandClasses = Arrays.asList(new RegionCmd(), new RegionPlusCmd(), new SelectionCmd(), new Tool());
+        events = Arrays.asList(
+                // Selection tool
+                new me.machinemaker.regionsplus.tool.PlayerInteract(),
+                // Blocks
+                new BlockPlace(),
+                new BlockBreak(),
+                // Player
+                new PlayerInteract(),
+                new PlayerInteractEntity(),
+                new PlayerMove(),
+                // Entity
+                new EntityDamage(),
+                new EntityDamageByEntity()
+        );
+
+
+        selectionManager = new SelectionManager();
+        regionManager = new RegionManager(this);
+        Binder binder = new Binder(this, regionManager, selectionManager, config);
+        this.injector = binder.createInjector();
+        commandClasses.forEach(c -> this.injector.injectMembers(c));
+        events.forEach(e -> this.injector.injectMembers(e));
+        this.injector.injectMembers(regionManager);
 
         cm = new PaperCommandManager(this);
-        //noinspection deprecation
+
+        Materials.load();
+
+        Lang.init(this);
+
         cm.enableUnstableAPI("help");
         setupConditions();
         setupContexts();
@@ -79,11 +130,21 @@ public final class RegionsPlus extends JavaPlugin {
         setupCommands();
 
         registerEvents();
-        setupPermissions();
 
         // Logging filter
         Logger coreLogger = (Logger) LogManager.getRootLogger();
         coreLogger.addFilter(new Log4JFilter());
+    }
+
+    @Singleton
+    @NewConfig(name = "config", fileName = "config.yml", format = ConfigFormat.YAML)
+    public class MainConfig extends BaseConfig {
+
+        @Param(description = "Use action bar for \"Not Allowed\" messages", path = "messages.use_action_bar")
+        public Boolean useActionBar = true;
+
+        @Param(description = "Delay between messages (in milliseconds)", path = "messages.delay")
+        public Long msgDelay = 1000L;
     }
 
     @Override
@@ -95,9 +156,9 @@ public final class RegionsPlus extends JavaPlugin {
     private void setupConditions() {
         cm.getCommandConditions().addCondition("selection", context -> {
             if (context.getIssuer().getPlayer() != null) {
-                if (!SelectionManager.get().hasSelection(context.getIssuer().getPlayer()))
+                if (!selectionManager.hasSelection(context.getIssuer().getPlayer()))
                     throw new ConditionFailedException(Lang.NO_SELECTION.toString());
-                Selection selection = SelectionManager.get().getSelection(context.getIssuer().getPlayer());
+                Selection selection = selectionManager.getSelection(context.getIssuer().getPlayer());
                 if (selection.getPos1() == null || selection.getPos2() == null)
                     throw new ConditionFailedException(Lang.PARTIAL_SELECTION.toString());
             }
@@ -111,7 +172,7 @@ public final class RegionsPlus extends JavaPlugin {
             else return new Sender(context.getSender());
         });
         contexts.registerContext(Region.class, context -> {
-            RegionWorld world = RegionManager.get().getWorld(context.getPlayer().getWorld().getName());
+            RegionWorld world = regionManager.getWorld(context.getPlayer().getWorld().getName());
             String input = context.popFirstArg();
             Optional<Region> region = world.getRegion(input);
             if (region.isPresent()) return region.get();
@@ -120,19 +181,19 @@ public final class RegionsPlus extends JavaPlugin {
         contexts.registerContext(BaseRegion.class, context -> {
             String input = context.popFirstArg();
             if (input.equals("$&CURRENT&$") && context.getIssuer().isPlayer()) {
-                RegionWorld rgWorld = RegionManager.get().getWorld(context.getPlayer().getWorld().getName());
+                RegionWorld rgWorld = regionManager.getWorld(context.getPlayer().getWorld().getName());
                 return rgWorld.getRegions().stream().filter(rg -> rg.inRegion(context.getPlayer().getLocation())).min(Comparator.comparingLong(Region::getVolume)).map(rg -> (BaseRegion) rg).orElse(rgWorld.getGlobal());
             } else {
                 Optional<? extends BaseRegion> region;
                 String worldString = input.contains(":") ? input.split(":")[0] : context.getIssuer().isPlayer() ? context.getPlayer().getWorld().getName() : null;
                 RegionWorld world;
                 if (input.contains(":")) {
-                    world = RegionManager.get().getWorld(worldString);
+                    world = regionManager.getWorld(worldString);
                     if (isNull(world))
                         throw new InvalidCommandArgument(Lang.NOT_VALID_WORLD.toString().replace("{world}", worldString), false);
                     region = world.getRegionAll(input.split(":")[1]);
                 } else if (!isNull(context.getPlayer()))
-                    region = RegionManager.get().getWorld(context.getPlayer().getWorld().getName()).getRegionAll(input);
+                    region = regionManager.getWorld(context.getPlayer().getWorld().getName()).getRegionAll(input);
                 else throw new InvalidCommandArgument(Lang.NO_WORLD_CONSOLE.toString(), false);
                 if (!region.isPresent())
                     throw new InvalidCommandArgument(Lang.NOT_VALID_REGION.toString().replace("{world}", worldString), false);
@@ -143,7 +204,6 @@ public final class RegionsPlus extends JavaPlugin {
             String input = context.popFirstArg();
             Set<OfflinePlayer> players = new HashSet<>();
             Arrays.stream(input.split(",")).forEach(name -> {
-                //noinspection deprecation
                 OfflinePlayer player = Bukkit.getOfflinePlayer(name);
                 if (player.hasPlayedBefore() || player.getName() != null) players.add(player);
             });
@@ -160,10 +220,10 @@ public final class RegionsPlus extends JavaPlugin {
             boolean showGlobal = Boolean.parseBoolean(context.getConfig("global", "false"));
             List<String> names = new ArrayList<>();
             if (!isNull(context.getPlayer())) {
-                names = RegionManager.get().getWorld(context.getPlayer().getWorld().getName()).getRegions().stream().map(BaseRegion::getName).collect(Collectors.toList());
-                if (showGlobal) names.add(RegionManager.get().getWorld(context.getPlayer().getWorld().getName()).getGlobal().getName());
+                names = regionManager.getWorld(context.getPlayer().getWorld().getName()).getRegions().stream().map(BaseRegion::getName).collect(Collectors.toList());
+                if (showGlobal) names.add(regionManager.getWorld(context.getPlayer().getWorld().getName()).getGlobal().getName());
             }
-            for (RegionWorld world : RegionManager.get().getWorlds()) {
+            for (RegionWorld world : regionManager.getWorlds()) {
                 for (Region region : world.getRegions())
                     names.add(region.getNameKey());
                 if (showGlobal) names.add(world.getName() + ":" + world.getGlobal().getName());
@@ -216,10 +276,7 @@ public final class RegionsPlus extends JavaPlugin {
     }
 
     private void setupCommands() {
-        cm.registerCommand(new Tool());
-        cm.registerCommand(new SelectionCmd());
-        cm.registerCommand(new RegionPlusCmd());
-        cm.registerCommand(new RegionCmd());
+        this.commandClasses.forEach(c -> cm.registerCommand(c));
 
         try {
             cm.getLocales().loadYamlLanguageFile("lang.yml", Locale.ENGLISH);
@@ -228,26 +285,8 @@ public final class RegionsPlus extends JavaPlugin {
         }
     }
 
-    private void setupPermissions() {
-        RegisteredServiceProvider<Permission> rsp = getServer().getServicesManager().getRegistration(Permission.class);
-        permManager = rsp.getProvider();
-    }
-
     private void registerEvents() {
         PluginManager pm = getServer().getPluginManager();
-        // Selection tool
-        pm.registerEvents(new PlayerInteract(), this);
-
-        // Block
-        pm.registerEvents(new Place(), this);
-        pm.registerEvents(new Break(), this);
-
-        // Player
-        pm.registerEvents(new Interact(), this);
-        pm.registerEvents(new InteractEntity(), this);
-    }
-
-    public Permission getPermManager() {
-        return permManager;
+        events.forEach(e -> pm.registerEvents(e, this));
     }
 }

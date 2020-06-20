@@ -1,11 +1,14 @@
 package me.machinemaker.regionsplus.regions;
 
 import javafx.geometry.Point3D;
+import lombok.Getter;
 import me.machinemaker.regionsplus.worlds.RegionWorld;
 import org.bukkit.Location;
 
 public class CubeRegion extends Region {
 
+    // TODO: Remove dependency on Point3D
+    @Getter
     private Point3D dimensions;
 
     public CubeRegion(RegionWorld world, String name) {
@@ -25,9 +28,9 @@ public class CubeRegion extends Region {
             && loc.getBlockZ() >= this.pos1.getBlockZ() && loc.getBlockZ() <= this.pos2.getBlockZ();
     }
 
-    public Point3D getDimensions() {
-        return dimensions;
-    }
+//    public Point3D getDimensions() {
+//        return dimensions;
+//    }
 
     @Override
     public long getVolume() {
